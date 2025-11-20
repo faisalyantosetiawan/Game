@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devil Hunter 2D</title>
+    <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a0033, #330066);
+            font-family: 'Arial Black', Arial, sans-serif;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        html {
+            height: 100%;
+        }
+
+        .game-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: linear-gradient(180deg, #4A4A4A 0%, #2F2F2F 50%, #1A1A1A 100%);
+            overflow: hidden;
+        }
+
+        .game-area {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background-image: 
+                /* Castle towers */
+                linear-gradient(90deg, transparent 0%, transparent 10%, #654321 10%, #654321 15%, transparent 15%, transparent 25%, #654321 25%, #654321 30%, transparent 30%, transparent 70%, #654321 70%, #654321 75%, transparent 75%, transparent 85%, #654321 85%, #654321 90%, transparent 90%),
+                /* Castle walls */
+                linear-gradient(90deg, transparent 0%, transparent 5%, #8B4513 5%, #8B4513 95%, transparent 95%),
+                /* Castle battlements */
+                repeating-linear-gradient(90deg, #654321 0px, #654321 20px, transparent 20px, transparent 30px),
+                /* Stone floor pattern */
+                repeating-linear-gradient(45deg, #696969 0px, #696969 8px, #5A5A5A 8px, #5A5A5A 16px),
+                /* Torches */
+                radial-gradient(circle 8px at 20% 30%, #FF4500 4px, transparent 8px),
+                radial-gradient(circle 8px at 80% 30%, #FF4500 4px, transparent 8px),
+                /* Ancient runes */
+                radial-gradient(circle 2px at 15% 60%, #FFD700 2px, transparent 2px),
+                radial-gradient(circle 2px at 85% 65%, #FFD700 2px, transparent 2px);
+            background-size: 
+                100% 40px,
+                100% 60px,
+                100% 20px,
+                32px 32px,
+                100% 100%,
+                100% 100%,
+                100% 100%,
+                100% 100%;
+            background-position: 
+                0 0,
+                0 20px,
+                0 0,
+                0 80%,
+                0 0,
+                0 0,
+                0 0,
+                0 0;
+            background-repeat: 
+                no-repeat,
+                no-repeat,
+                repeat-x,
+                repeat,
+                no-repeat,
+                no-repeat,
+                no-repeat,
+                no-repeat;
+            image-rendering: pixelated;
+        }
+
+        .player {
+            position: absolute;
+            width: 32px;
+            height: 48px;
+            bottom: 100px;
+            left: 100px;
+            background: 
+                /* Head */
+                linear-gradient(90deg, transparent 8px, #ffdbac 8px, #ffdbac 24px, transparent 24px),
+                /* Body */
+                linear-gradient(90deg, transparent 4px, #8B4513 4px, #8B4513 28px, transparent 28px);
+            background-size: 32px 16px, 32px 32px;
+            background-position: 0 0, 0 16px;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            transition: all 0.1s ease;
+            z-index: 10;
+            border: 1px solid #654321;
+        }
+
+        .player::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 10px;
+            width: 12px;
+            height: 12px;
+            background: 
+                /* Eyes */
+                radial-gradient(circle 1px at 3px 4px, #000 1px, transparent 1px),
+                radial-gradient(circle 1px at 9px 4px, #000 1px, transparent 1px),
+                /* Face */
+                #ffdbac;
+            image-rendering: pixelated;
+        }
+
+        .player::after {
+            content: '';
+            position: absolute;
+            left: -16px;
+            top: 20px;
+            width: 20px;
+            height: 4px;
+            background: 
+                /* Gun barrel */
+                linear-gradient(90deg, #444 0%, #444 75%, #222 75%, #222 100%),
+                /* Gun handle */
+                linear-gradient(90deg, transparent 12px, #8B4513 12px, #8B4513 20px, transparent 20px);
+            background-size: 16px 2px, 20px 4px;
+            background-position: 0 1px, 0 0;
+            background-repeat: no-repeat;
+            transform-origin: right center;
+            image-rendering: pixelated;
+            transition: transform 0.1s ease;
+            transform: rotate(var(--gun-rotation, 0deg));
+        }
+
+        .enemy {
+            position: absolute;
+            width: 32px;
+            height: 40px;
+            background: transparent;
+            transition: all 0.1s ease;
+            image-rendering: pixelated;
+        }
+
+        .enemy::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 32px;
+            height: 40px;
+            background: 
+                /* Horns */
+                radial-gradient(circle 2px at 6px 4px, #8B0000 2px, transparent 2px),
+                radial-gradient(circle 2px at 26px 4px, #8B0000 2px, transparent 2px),
+                /* Head */
+                linear-gradient(90deg, transparent 4px, #8B0000 4px, #8B0000 28px, transparent 28px),
+                /* Eyes */
+                radial-gradient(circle 1px at 10px 12px, #FF0000 1px, transparent 1px),
+                radial-gradient(circle 1px at 22px 12px, #FF0000 1px, transparent 1px),
+                /* Body */
+                linear-gradient(90deg, transparent 2px, #4B0000 2px, #4B0000 30px, transparent 30px);
+            background-size: 32px 8px, 32px 8px, 32px 16px, 32px 16px, 32px 16px, 32px 24px;
+            background-position: 0 0, 0 0, 0 4px, 0 4px, 0 4px, 0 16px;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 0 4px rgba(139, 0, 0, 0.8));
+        }
+
+        .boss {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: transparent;
+            animation: bossGlow 2s ease-in-out infinite alternate;
+            image-rendering: pixelated;
+        }
+
+        .boss::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 80px;
+            height: 80px;
+            background: 
+                /* Crown */
+                linear-gradient(90deg, transparent 20px, #FFD700 20px, #FFD700 60px, transparent 60px),
+                /* Crown spikes */
+                radial-gradient(circle 3px at 30px 8px, #FFD700 3px, transparent 3px),
+                radial-gradient(circle 3px at 40px 4px, #FFD700 3px, transparent 3px),
+                radial-gradient(circle 3px at 50px 8px, #FFD700 3px, transparent 3px),
+                /* Horns */
+                radial-gradient(circle 4px at 16px 16px, #8B0000 4px, transparent 4px),
+                radial-gradient(circle 4px at 64px 16px, #8B0000 4px, transparent 4px),
+                /* Head */
+                radial-gradient(circle 28px at 40px 40px, #8B0000 28px, transparent 28px),
+                /* Eyes */
+                radial-gradient(circle 3px at 28px 32px, #FF0000 3px, transparent 3px),
+                radial-gradient(circle 3px at 52px 32px, #FF0000 3px, transparent 3px),
+                /* Mouth */
+                linear-gradient(90deg, transparent 32px, #000 32px, #000 48px, transparent 48px),
+                /* Fangs */
+                radial-gradient(circle 2px at 34px 44px, #FFF 2px, transparent 2px),
+                radial-gradient(circle 2px at 46px 44px, #FFF 2px, transparent 2px);
+            background-size: 80px 8px, 80px 12px, 80px 12px, 80px 12px, 80px 32px, 80px 32px, 80px 80px, 80px 80px, 80px 80px, 80px 8px, 80px 80px, 80px 80px;
+            background-position: 0 8px, 0 4px, 0 4px, 0 4px, 0 0, 0 0, 0 0, 0 0, 0 0, 0 40px, 0 0, 0 0;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 0 8px rgba(255, 0, 0, 0.8));
+        }
+
+        .boss::after {
+            content: '';
+            position: absolute;
+            top: 60px;
+            right: 8px;
+            width: 12px;
+            height: 12px;
+            background: 
+                radial-gradient(circle 2px at 6px 2px, #FFFF00 2px, transparent 2px),
+                radial-gradient(circle 1px at 3px 6px, #FFFF00 1px, transparent 1px),
+                radial-gradient(circle 1px at 9px 6px, #FFFF00 1px, transparent 1px),
+                radial-gradient(circle 2px at 6px 10px, #FFFF00 2px, transparent 2px);
+            background-size: 12px 12px;
+            background-repeat: no-repeat;
+            animation: lightning 0.5s ease-in-out infinite;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 0 4px rgba(255, 255, 0, 0.8));
+        }
+
+        @keyframes bossGlow {
+            0% { 
+                box-shadow: 0 0 30px rgba(255, 0, 0, 0.6);
+                filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.5)); 
+            }
+            100% { 
+                box-shadow: 0 0 50px rgba(255, 0, 0, 0.9);
+                filter: drop-shadow(0 0 40px rgba(255, 0, 0, 0.8)); 
+            }
+        }
+
+        .potion {
+            position: absolute;
+            width: 16px;
+            height: 20px;
+            background: transparent;
+            animation: potionFloat 2s ease-in-out infinite alternate;
+            z-index: 5;
+            image-rendering: pixelated;
+        }
+
+        .potion::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 16px;
+            height: 20px;
+            background: 
+                /* Cork */
+                linear-gradient(90deg, transparent 4px, #8B4513 4px, #8B4513 12px, transparent 12px),
+                /* Bottle neck */
+                linear-gradient(90deg, transparent 6px, #228B22 6px, #228B22 10px, transparent 10px),
+                /* Bottle body */
+                linear-gradient(90deg, transparent 2px, #228B22 2px, #228B22 14px, transparent 14px),
+                /* Liquid */
+                linear-gradient(90deg, transparent 4px, #00FF00 4px, #00FF00 12px, transparent 12px);
+            background-size: 16px 4px, 16px 4px, 16px 12px, 16px 8px;
+            background-position: 0 0, 0 4px, 0 8px, 0 12px;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 0 4px rgba(0, 255, 0, 0.8));
+        }
+
+        @keyframes potionFloat {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-10px); }
+        }
+
+        .special-enemy {
+            animation: specialGlow 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes specialGlow {
+            0% { filter: drop-shadow(0 0 8px rgba(128, 0, 128, 0.6)); }
+            100% { filter: drop-shadow(0 0 15px rgba(0, 255, 0, 0.8)); }
+        }
+
+        @keyframes lightning {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .bullet {
+            position: absolute;
+            width: 8px;
+            height: 3px;
+            background: #ffff00;
+            border-radius: 2px;
+            box-shadow: 0 0 10px #ffff00;
+        }
+
+        .explosion {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #ff6600, #ff0000, transparent);
+            border-radius: 50%;
+            animation: explode 0.3s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 100;
+        }
+
+        .health-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            height: 20px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff6600, #ffff00);
+            transition: width 0.3s ease;
+            width: 100%;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 14px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+
+        .restart-btn {
+            background: linear-gradient(45deg, #ff4444, #cc0000);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            background: linear-gradient(45deg, #ff6666, #ee0000);
+            transform: scale(1.05);
+        }
+
+        .combo-display {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            color: #ffff00;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .boss-health-bar {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 30px;
+            background: rgba(0,0,0,0.7);
+            border: 3px solid #ff0000;
+            border-radius: 15px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .boss-health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff6600);
+            transition: width 0.3s ease;
+            width: 100%;
+        }
+
+        .boss-name {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff0000;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            display: none;
+        }
+
+        .wave-notification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 40px 60px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+            border: 3px solid #ffff00;
+            box-shadow: 0 0 30px rgba(255, 255, 0, 0.5);
+        }
+
+        .wave-notification h2 {
+            color: #ffff00;
+            font-size: 36px;
+            margin: 0 0 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .wave-notification p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        .wave-complete {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,100,0,0.9);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 999;
+            border: 3px solid #00ff00;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5);
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            0% { transform: translate(-50%, -100%); opacity: 0; }
+            100% { transform: translate(-50%, -50%); opacity: 1; }
+        }
+
+        .potion-timer {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 8px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #00ff00;
+            border-radius: 4px;
+            overflow: hidden;
+            display: none;
+            z-index: 15;
+        }
+
+        .potion-timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #66ff66);
+            transition: width 0.1s ease;
+            width: 100%;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-area" id="gameArea">
+            <div class="hud">
+                <div>Score: <span id="score">0</span></div>
+                <div>Wave: <span id="wave">1</span></div>
+            </div>
+            
+            <div class="health-bar">
+                <div class="health-fill" id="healthFill"></div>
+            </div>
+
+            <div class="combo-display" id="comboDisplay">COMBO x<span id="comboCount">0</span></div>
+
+            <div class="boss-name" id="bossName">DEMON LORD</div>
+            <div class="boss-health-bar" id="bossHealthBar">
+                <div class="boss-health-fill" id="bossHealthFill"></div>
+            </div>
+
+            <div class="player" id="player">
+                <div class="potion-timer" id="potionTimer">
+                    <div class="potion-timer-fill" id="potionTimerFill"></div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div>WASD: Move | Space: Shoot | Mouse: Aim</div>
+                <div>Eliminate demons to advance waves!</div>
+            </div>
+
+            <div class="wave-complete" id="waveComplete">
+                <h2>🎉 WAVE COMPLETE! 🎉</h2>
+                <p>All demons eliminated!</p>
+                <p>Bonus Score: <span id="waveBonus">0</span></p>
+            </div>
+
+            <div class="wave-notification" id="waveNotification">
+                <h2>WAVE <span id="nextWaveNumber">2</span></h2>
+                <p>Enemies: <span id="nextWaveEnemies">7</span></p>
+                <p>Boss Health: <span id="nextBossHealth">16</span></p>
+                <p>Get ready for battle!</p>
+            </div>
+
+            <div class="game-over" id="gameOver">
+                <h2>GAME OVER</h2>
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <p>Waves Survived: <span id="finalWave">0</span></p>
+                <button class="restart-btn" onclick="restartGame()">RESTART HUNT</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class Game {
+            constructor() {
+                this.player = {
+                    x: 100,
+                    y: window.innerHeight - 180,
+                    width: 32,
+                    height: 48,
+                    health: 100,
+                    maxHealth: 100,
+                    speed: 5
+                };
+                
+                this.enemies = [];
+                this.bullets = [];
+                this.potions = [];
+                this.boss = null;
+                this.score = 0;
+                this.wave = 1;
+                this.enemiesPerWave = 5;
+                this.enemiesKilled = 0;
+                this.combo = 0;
+                this.comboTimer = 0;
+                this.gameRunning = true;
+                this.gameCompleted = false;
+                this.waveInProgress = false;
+                this.totalEnemiesInWave = 0;
+                this.enemiesRemainingInWave = 0;
+                this.doubleShotActive = false;
+                this.doubleShotTimer = 0;
+                this.doubleShotDuration = 600; // 10 seconds at 60fps
+                
+                this.keys = {};
+                this.mouseX = 0;
+                this.mouseY = 0;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.spawnWave();
+                this.gameLoop();
+            }
+            
+            setupEventListeners() {
+                document.addEventListener('keydown', (e) => {
+                    e.preventDefault();
+                    this.keys[e.key.toLowerCase()] = true;
+                    this.keys[e.code.toLowerCase()] = true;
+                    
+                    if (e.key === ' ' || e.code === 'Space') {
+                        this.shoot();
+                    }
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    e.preventDefault();
+                    this.keys[e.key.toLowerCase()] = false;
+                    this.keys[e.code.toLowerCase()] = false;
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    this.mouseX = e.clientX;
+                    this.mouseY = e.clientY;
+                });
+                
+                document.addEventListener('click', (e) => {
+                    if (this.gameRunning) {
+                        this.shoot();
+                    }
+                });
+                
+                // Make sure the game area can receive focus
+                const gameArea = document.getElementById('gameArea');
+                gameArea.setAttribute('tabindex', '0');
+                gameArea.focus();
+            }
+            
+            spawnWave() {
+                // Check if game is completed
+                if (this.wave > 10) {
+                    this.gameCompleted = true;
+                    this.showVictory();
+                    return;
+                }
+                
+                this.waveInProgress = true;
+                this.totalEnemiesInWave = this.enemiesPerWave + 1; // +1 for boss
+                this.enemiesRemainingInWave = this.totalEnemiesInWave;
+                
+                // Show wave notification
+                this.showWaveNotification();
+                
+                // Start spawning after notification
+                setTimeout(() => {
+                    // Spawn enemies for this wave
+                    for (let i = 0; i < this.enemiesPerWave; i++) {
+                        setTimeout(() => {
+                            // One enemy per wave carries a potion (middle enemy)
+                            const hasPotion = (i === Math.floor(this.enemiesPerWave / 2));
+                            this.spawnEnemy(hasPotion);
+                        }, i * 800);
+                    }
+                    
+                    // Spawn boss for every wave
+                    setTimeout(() => {
+                        this.spawnBoss();
+                    }, this.enemiesPerWave * 800 + 1000);
+                }, 3000); // Wait 3 seconds after notification
+            }
+            
+            spawnEnemy(hasPotion = false) {
+                const enemy = {
+                    x: Math.random() * (window.innerWidth - 32),
+                    y: Math.random() * (window.innerHeight - 200) + 50,
+                    width: 32,
+                    height: 40,
+                    health: 2,
+                    speed: 1 + Math.random() * 2,
+                    element: null,
+                    hasPotion: hasPotion
+                };
+                
+                // Avoid spawning too close to player
+                const distToPlayer = Math.sqrt(
+                    Math.pow(enemy.x - this.player.x, 2) + 
+                    Math.pow(enemy.y - this.player.y, 2)
+                );
+                
+                if (distToPlayer < 150) {
+                    enemy.x = this.player.x > window.innerWidth / 2 ? 50 : window.innerWidth - 100;
+                }
+                
+                enemy.element = this.createElement('div', 'enemy');
+                if (hasPotion) {
+                    enemy.element.classList.add('special-enemy');
+                }
+                enemy.element.style.left = enemy.x + 'px';
+                enemy.element.style.top = enemy.y + 'px';
+                
+                this.enemies.push(enemy);
+                document.getElementById('gameArea').appendChild(enemy.element);
+            }
+            
+            spawnPotion(x, y) {
+                const potion = {
+                    x: x,
+                    y: y,
+                    width: 16,
+                    height: 20,
+                    element: null
+                };
+                
+                potion.element = this.createElement('div', 'potion');
+                potion.element.style.left = potion.x + 'px';
+                potion.element.style.top = potion.y + 'px';
+                
+                this.potions.push(potion);
+                document.getElementById('gameArea').appendChild(potion.element);
+            }
+            
+            spawnBoss() {
+                const bossHealth = 10 + (this.wave * 3);
+                this.boss = {
+                    x: window.innerWidth / 2 - 40,
+                    y: 150,
+                    width: 80,
+                    height: 80,
+                    health: bossHealth,
+                    maxHealth: bossHealth,
+                    speed: 2,
+                    attackTimer: 0,
+                    attackCooldown: 120,
+                    element: null
+                };
+                
+                this.boss.element = this.createElement('div', 'boss');
+                this.boss.element.style.left = this.boss.x + 'px';
+                this.boss.element.style.top = this.boss.y + 'px';
+                
+                document.getElementById('gameArea').appendChild(this.boss.element);
+                
+                // Show boss UI
+                document.getElementById('bossName').style.display = 'block';
+                document.getElementById('bossHealthBar').style.display = 'block';
+                this.updateBossHealth();
+            }
+            
+            shoot() {
+                const playerCenterX = this.player.x + this.player.width / 2;
+                const playerCenterY = this.player.y + this.player.height / 2;
+                
+                const angle = Math.atan2(this.mouseY - playerCenterY, this.mouseX - playerCenterX);
+                
+                if (this.doubleShotActive) {
+                    // Shoot two bullets with slight angle difference
+                    for (let i = -1; i <= 1; i += 2) {
+                        const bulletAngle = angle + (i * 0.2);
+                        const bullet = {
+                            x: playerCenterX,
+                            y: playerCenterY,
+                            vx: Math.cos(bulletAngle) * 10,
+                            vy: Math.sin(bulletAngle) * 10,
+                            element: null
+                        };
+                        
+                        bullet.element = this.createElement('div', 'bullet');
+                        bullet.element.style.left = bullet.x + 'px';
+                        bullet.element.style.top = bullet.y + 'px';
+                        bullet.element.style.background = '#00ff00';
+                        bullet.element.style.boxShadow = '0 0 10px #00ff00';
+                        
+                        this.bullets.push(bullet);
+                        document.getElementById('gameArea').appendChild(bullet.element);
+                    }
+                } else {
+                    // Normal single shot
+                    const bullet = {
+                        x: playerCenterX,
+                        y: playerCenterY,
+                        vx: Math.cos(angle) * 10,
+                        vy: Math.sin(angle) * 10,
+                        element: null
+                    };
+                    
+                    bullet.element = this.createElement('div', 'bullet');
+                    bullet.element.style.left = bullet.x + 'px';
+                    bullet.element.style.top = bullet.y + 'px';
+                    
+                    this.bullets.push(bullet);
+                    document.getElementById('gameArea').appendChild(bullet.element);
+                }
+            }
+            
+            update() {
+                if (!this.gameRunning) return;
+                
+                // Update player movement with multiple key detection methods
+                let moved = false;
+                
+                if ((this.keys['a'] || this.keys['keya'] || this.keys['arrowleft']) && this.player.x > 0) {
+                    this.player.x -= this.player.speed;
+                    moved = true;
+                }
+                if ((this.keys['d'] || this.keys['keyd'] || this.keys['arrowright']) && this.player.x < window.innerWidth - this.player.width) {
+                    this.player.x += this.player.speed;
+                    moved = true;
+                }
+                if ((this.keys['w'] || this.keys['keyw'] || this.keys['arrowup']) && this.player.y > 0) {
+                    this.player.y -= this.player.speed;
+                    moved = true;
+                }
+                if ((this.keys['s'] || this.keys['keys'] || this.keys['arrowdown']) && this.player.y < window.innerHeight - this.player.height) {
+                    this.player.y += this.player.speed;
+                    moved = true;
+                }
+                
+                // Always update player position and gun rotation
+                const playerElement = document.getElementById('player');
+                if (playerElement) {
+                    playerElement.style.left = this.player.x + 'px';
+                    playerElement.style.top = this.player.y + 'px';
+                    
+                    // Rotate gun to follow mouse
+                    const playerCenterX = this.player.x + this.player.width / 2;
+                    const playerCenterY = this.player.y + this.player.height / 2;
+                    const angle = Math.atan2(this.mouseY - playerCenterY, this.mouseX - playerCenterX);
+                    const degrees = (angle * 180 / Math.PI);
+                    
+                    // Apply rotation to gun (::after pseudo-element)
+                    playerElement.style.setProperty('--gun-rotation', degrees + 'deg');
+                }
+                
+                // Update bullets
+                this.bullets.forEach((bullet, bulletIndex) => {
+                    bullet.x += bullet.vx;
+                    bullet.y += bullet.vy;
+                    
+                    bullet.element.style.left = bullet.x + 'px';
+                    bullet.element.style.top = bullet.y + 'px';
+                    
+                    // Check boss bullet collision with player
+                    if (bullet.isBoss && this.checkCollision(bullet, this.player)) {
+                        this.player.health -= 15;
+                        this.updateHealthBar();
+                        
+                        // Remove bullet
+                        bullet.element.remove();
+                        this.bullets.splice(bulletIndex, 1);
+                        
+                        if (this.player.health <= 0) {
+                            this.gameOver();
+                        }
+                        return;
+                    }
+                    
+                    // Remove bullets that are off screen
+                    if (bullet.x < 0 || bullet.x > window.innerWidth || 
+                        bullet.y < 0 || bullet.y > window.innerHeight) {
+                        bullet.element.remove();
+                        this.bullets.splice(bulletIndex, 1);
+                    }
+                });
+                
+                // Update enemies
+                this.enemies.forEach((enemy, enemyIndex) => {
+                    // Move enemy towards player
+                    const dx = this.player.x - enemy.x;
+                    const dy = this.player.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > 0) {
+                        enemy.x += (dx / distance) * enemy.speed;
+                        enemy.y += (dy / distance) * enemy.speed;
+                    }
+                    
+                    enemy.element.style.left = enemy.x + 'px';
+                    enemy.element.style.top = enemy.y + 'px';
+                    
+                    // Check collision with player
+                    if (this.checkCollision(this.player, enemy)) {
+                        this.player.health -= 10;
+                        this.updateHealthBar();
+                        
+                        // Knockback enemy
+                        enemy.x += dx > 0 ? -50 : 50;
+                        enemy.y += dy > 0 ? -50 : 50;
+                        
+                        if (this.player.health <= 0) {
+                            this.gameOver();
+                        }
+                    }
+                });
+                
+                // Update boss
+                if (this.boss) {
+                    const dx = this.player.x - this.boss.x;
+                    const dy = this.player.y - this.boss.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // Boss movement (slower and more strategic)
+                    if (distance > 200) {
+                        this.boss.x += (dx / distance) * this.boss.speed;
+                        this.boss.y += (dy / distance) * this.boss.speed;
+                    } else {
+                        // Circle around player when close
+                        const angle = Math.atan2(dy, dx) + 0.02;
+                        this.boss.x += Math.cos(angle + Math.PI/2) * this.boss.speed;
+                        this.boss.y += Math.sin(angle + Math.PI/2) * this.boss.speed;
+                    }
+                    
+                    this.boss.element.style.left = this.boss.x + 'px';
+                    this.boss.element.style.top = this.boss.y + 'px';
+                    
+                    // Boss attacks
+                    this.boss.attackTimer++;
+                    if (this.boss.attackTimer >= this.boss.attackCooldown) {
+                        this.bossAttack();
+                        this.boss.attackTimer = 0;
+                    }
+                    
+                    // Check collision with player
+                    if (this.checkCollision(this.player, this.boss)) {
+                        this.player.health -= 20;
+                        this.updateHealthBar();
+                        
+                        // Knockback player
+                        const knockbackForce = 30;
+                        this.player.x += (dx / distance) * knockbackForce;
+                        this.player.y += (dy / distance) * knockbackForce;
+                        
+                        if (this.player.health <= 0) {
+                            this.gameOver();
+                        }
+                    }
+                }
+                
+                // Check bullet-enemy collisions
+                this.bullets.forEach((bullet, bulletIndex) => {
+                    this.enemies.forEach((enemy, enemyIndex) => {
+                        if (this.checkCollision(bullet, enemy)) {
+                            // Create explosion effect
+                            this.createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
+                            
+                            // Remove bullet
+                            bullet.element.remove();
+                            this.bullets.splice(bulletIndex, 1);
+                            
+                            // Damage enemy
+                            enemy.health--;
+                            if (enemy.health <= 0) {
+                                // Drop potion if this enemy had one
+                                if (enemy.hasPotion) {
+                                    this.spawnPotion(enemy.x + enemy.width/2 - 15, enemy.y + enemy.height/2 - 15);
+                                }
+                                
+                                enemy.element.remove();
+                                this.enemies.splice(enemyIndex, 1);
+                                this.enemiesKilled++;
+                                this.enemiesRemainingInWave--;
+                                this.score += 100;
+                                this.combo++;
+                                this.comboTimer = 60; // 1 second at 60fps
+                                this.updateCombo();
+                                this.updateScore();
+                                
+                                // Check if wave is complete (all enemies + boss defeated)
+                                if (this.enemiesRemainingInWave <= 0 && this.waveInProgress) {
+                                    this.completeWave();
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Check bullet-boss collision
+                    if (this.boss && this.checkCollision(bullet, this.boss)) {
+                        // Create explosion effect
+                        this.createExplosion(this.boss.x + this.boss.width/2, this.boss.y + this.boss.height/2);
+                        
+                        // Remove bullet
+                        bullet.element.remove();
+                        this.bullets.splice(bulletIndex, 1);
+                        
+                        // Damage boss
+                        this.boss.health--;
+                        this.updateBossHealth();
+                        
+                        if (this.boss.health <= 0) {
+                            // Boss defeated
+                            this.boss.element.remove();
+                            this.boss = null;
+                            this.enemiesRemainingInWave--;
+                            this.score += 1000;
+                            this.combo += 5;
+                            this.comboTimer = 60;
+                            this.updateCombo();
+                            this.updateScore();
+                            
+                            // Hide boss UI
+                            document.getElementById('bossName').style.display = 'none';
+                            document.getElementById('bossHealthBar').style.display = 'none';
+                            
+                            // Check if wave is complete (all enemies + boss defeated)
+                            if (this.enemiesRemainingInWave <= 0 && this.waveInProgress) {
+                                this.completeWave();
+                            }
+                        }
+                    }
+                });
+                
+                // Update potions
+                this.potions.forEach((potion, potionIndex) => {
+                    // Check collision with player
+                    if (this.checkCollision(this.player, potion)) {
+                        // Activate double shot
+                        this.doubleShotActive = true;
+                        this.doubleShotTimer = this.doubleShotDuration;
+                        
+                        // Show potion timer
+                        document.getElementById('potionTimer').style.display = 'block';
+                        
+                        // Remove potion
+                        potion.element.remove();
+                        this.potions.splice(potionIndex, 1);
+                        
+                        // Add score bonus
+                        this.score += 500;
+                        this.updateScore();
+                    }
+                });
+                
+                // Update double shot timer
+                if (this.doubleShotTimer > 0) {
+                    this.doubleShotTimer--;
+                    
+                    // Update timer bar display
+                    const timerPercentage = (this.doubleShotTimer / this.doubleShotDuration) * 100;
+                    document.getElementById('potionTimerFill').style.width = timerPercentage + '%';
+                    
+                    if (this.doubleShotTimer === 0) {
+                        this.doubleShotActive = false;
+                        document.getElementById('potionTimer').style.display = 'none';
+                    }
+                }
+                
+                // Update combo timer
+                if (this.comboTimer > 0) {
+                    this.comboTimer--;
+                    if (this.comboTimer === 0) {
+                        this.combo = 0;
+                        this.updateCombo();
+                    }
+                }
+            }
+            
+            checkCollision(obj1, obj2) {
+                return obj1.x < obj2.x + obj2.width &&
+                       obj1.x + (obj1.width || 8) > obj2.x &&
+                       obj1.y < obj2.y + obj2.height &&
+                       obj1.y + (obj1.height || 3) > obj2.y;
+            }
+            
+            createExplosion(x, y) {
+                const explosion = this.createElement('div', 'explosion');
+                explosion.style.left = (x - 20) + 'px';
+                explosion.style.top = (y - 20) + 'px';
+                document.getElementById('gameArea').appendChild(explosion);
+                
+                setTimeout(() => {
+                    explosion.remove();
+                }, 300);
+            }
+            
+            completeWave() {
+                this.waveInProgress = false;
+                
+                // Show wave complete notification
+                this.showWaveComplete();
+                
+                // Prepare for next wave
+                setTimeout(() => {
+                    this.nextWave();
+                }, 3000); // Wait 3 seconds before next wave
+            }
+            
+            nextWave() {
+                this.wave++;
+                
+                // Check if game is completed
+                if (this.wave > 10) {
+                    this.gameCompleted = true;
+                    this.showVictory();
+                    return;
+                }
+                
+                this.enemiesPerWave += 2;
+                document.getElementById('wave').textContent = this.wave;
+                
+                // Start next wave immediately
+                this.spawnWave();
+            }
+            
+            updateScore() {
+                const bonusScore = this.combo > 1 ? (this.combo - 1) * 50 : 0;
+                this.score += bonusScore;
+                document.getElementById('score').textContent = this.score;
+            }
+            
+            updateCombo() {
+                const comboDisplay = document.getElementById('comboDisplay');
+                const comboCount = document.getElementById('comboCount');
+                
+                if (this.combo > 1) {
+                    comboCount.textContent = this.combo;
+                    comboDisplay.style.opacity = '1';
+                } else {
+                    comboDisplay.style.opacity = '0';
+                }
+            }
+            
+            bossAttack() {
+                if (!this.boss) return;
+                
+                // Boss shoots 3 bullets in a spread pattern
+                for (let i = -1; i <= 1; i++) {
+                    const angle = Math.atan2(this.player.y - this.boss.y, this.player.x - this.boss.x) + (i * 0.3);
+                    
+                    const bullet = {
+                        x: this.boss.x + this.boss.width / 2,
+                        y: this.boss.y + this.boss.height / 2,
+                        vx: Math.cos(angle) * 6,
+                        vy: Math.sin(angle) * 6,
+                        element: null,
+                        isBoss: true
+                    };
+                    
+                    bullet.element = this.createElement('div', 'bullet');
+                    bullet.element.style.left = bullet.x + 'px';
+                    bullet.element.style.top = bullet.y + 'px';
+                    bullet.element.style.background = '#ff0000';
+                    bullet.element.style.boxShadow = '0 0 10px #ff0000';
+                    
+                    this.bullets.push(bullet);
+                    document.getElementById('gameArea').appendChild(bullet.element);
+                }
+            }
+            
+            updateBossHealth() {
+                if (!this.boss) return;
+                
+                const healthPercentage = (this.boss.health / this.boss.maxHealth) * 100;
+                document.getElementById('bossHealthFill').style.width = healthPercentage + '%';
+            }
+            
+            showWaveNotification() {
+                const nextWaveEnemies = this.enemiesPerWave;
+                const nextBossHealth = 10 + (this.wave * 3);
+                
+                document.getElementById('nextWaveNumber').textContent = this.wave;
+                document.getElementById('nextWaveEnemies').textContent = nextWaveEnemies;
+                document.getElementById('nextBossHealth').textContent = nextBossHealth;
+                document.getElementById('waveNotification').style.display = 'block';
+                
+                setTimeout(() => {
+                    document.getElementById('waveNotification').style.display = 'none';
+                }, 3000);
+            }
+            
+            showWaveComplete() {
+                const waveBonus = this.wave * 500;
+                this.score += waveBonus;
+                this.updateScore();
+                
+                document.getElementById('waveBonus').textContent = waveBonus;
+                document.getElementById('waveComplete').style.display = 'block';
+                
+                setTimeout(() => {
+                    document.getElementById('waveComplete').style.display = 'none';
+                }, 2000);
+            }
+            
+            updateHealthBar() {
+                const healthPercentage = (this.player.health / this.player.maxHealth) * 100;
+                document.getElementById('healthFill').style.width = healthPercentage + '%';
+            }
+            
+            gameOver() {
+                this.gameRunning = false;
+                document.getElementById('finalScore').textContent = this.score;
+                document.getElementById('finalWave').textContent = this.wave;
+                document.getElementById('gameOver').style.display = 'block';
+            }
+            
+            showVictory() {
+                this.gameRunning = false;
+                const gameOverDiv = document.getElementById('gameOver');
+                gameOverDiv.innerHTML = `
+                    <h2 style="color: #ffff00;">VICTORY!</h2>
+                    <p>🎉 Congratulations! You've completed all 10 waves! 🎉</p>
+                    <p>Final Score: <span id="finalScore">${this.score}</span></p>
+                    <p>You are the ultimate Devil Hunter!</p>
+                    <button class="restart-btn" onclick="restartGame()">PLAY AGAIN</button>
+                `;
+                gameOverDiv.style.display = 'block';
+            }
+            
+            createElement(tag, className) {
+                const element = document.createElement(tag);
+                element.className = className;
+                return element;
+            }
+            
+            gameLoop() {
+                this.update();
+                if (this.gameRunning) {
+                    requestAnimationFrame(() => this.gameLoop());
+                }
+            }
+        }
+        
+        let game;
+        
+        function startGame() {
+            game = new Game();
+        }
+        
+        function restartGame() {
+            // Clear existing game elements
+            const gameArea = document.getElementById('gameArea');
+            const enemies = gameArea.querySelectorAll('.enemy');
+            const bullets = gameArea.querySelectorAll('.bullet');
+            const explosions = gameArea.querySelectorAll('.explosion');
+            const bosses = gameArea.querySelectorAll('.boss');
+            const potions = gameArea.querySelectorAll('.potion');
+            
+            enemies.forEach(enemy => enemy.remove());
+            bullets.forEach(bullet => bullet.remove());
+            explosions.forEach(explosion => explosion.remove());
+            bosses.forEach(boss => boss.remove());
+            potions.forEach(potion => potion.remove());
+            
+            // Hide all UI screens
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('bossName').style.display = 'none';
+            document.getElementById('bossHealthBar').style.display = 'none';
+            document.getElementById('waveComplete').style.display = 'none';
+            document.getElementById('waveNotification').style.display = 'none';
+            
+            // Reset player position
+            const player = document.getElementById('player');
+            player.style.left = '100px';
+            player.style.top = (window.innerHeight - 180) + 'px';
+            
+            // Start new game
+            startGame();
+        }
+        
+        // Start the game when page loads
+        window.addEventListener('load', startGame);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'990c6b4eb0ff4dbc',t:'MTc2MDgzNjQ3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
